@@ -498,6 +498,8 @@ class TrignoAdapter():
            sensors_labels : tuple
                Labels for used sensors, e.g ('ORIENTATION1', 'ORIENTATION2',). When nothing
                passed then identifiers are used as labels.
+            host : str
+                IP address of Delsys Trigno Controll Utility or localhost
         """
         if(len(sensors_labels) != len(sensors_ids)):
             sensors_labels = sensors_ids
