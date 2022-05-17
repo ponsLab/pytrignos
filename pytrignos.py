@@ -112,7 +112,7 @@ class _BaseTrignoDaq(object):
 
     def stop(self):
         """Tell the device to stop streaming data."""
-        self._send_cmd('STOP')
+        self._send_cmd('QUIT')
 
     def reset(self):
         """Restart the connection to the Trigno Control Utility server."""
