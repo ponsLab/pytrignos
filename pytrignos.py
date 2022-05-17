@@ -464,7 +464,7 @@ class TrignoAdapter():
         pass
 
     @classmethod
-    def __create_sensors(cls,sensors_mode, sensors_ids, host='loclahost'):
+    def __create_sensors(cls,sensors_mode, sensors_ids, host='localhost'):
         try:
             trigno_sensor = cls.TRIGNO_MODE_TO_CLASS[sensors_mode](host=host, sensors_ids=sensors_ids)
             for sensor_id in sensors_ids:
