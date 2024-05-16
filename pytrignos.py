@@ -4,6 +4,7 @@ import numpy
 from collections import defaultdict
 import pandas as pd
 import datetime
+import time
 
 class _BaseTrignoDaq(object):
     """
@@ -248,7 +249,8 @@ class _BaseTrignoDaq(object):
            channel_number : int
                Number of channel
         """
-        self._send_cmd(f'SENSOR {sensor_number} CHANNEL {channel_number} RATE?', return_reply=False)
+        reply = self._send_cmd(f'SENSOR {sensor_number} CHANNEL {channel_number} RATE?', return_reply=True)
+        return reply
 
     def where_start(self,sensor_number):
         """
@@ -357,7 +359,9 @@ class TrignoEMG(_BaseTrignoDaq):
         channels_per_sensor = int(self.total_channels / self.max_number_of_sensors) # 1 for EMG
         self.channels_mask = self._channels_mask(sensors_ids=sensors_ids, number_of_channels=self.data_channels,
                                                  channels_per_sensor=channels_per_sensor)
+
         self.rate = 2000
+        #self.rate = float(self.what_rate(1, 1))
 
         self.scaler = 1.
         if units == 'mV':
@@ -365,6 +369,14 @@ class TrignoEMG(_BaseTrignoDaq):
         elif units == 'normalized':
             # max range of EMG data is 11 mV
             self.scaler = 1 / 0.011
+
+        #TODO: SET MODE here
+
+        for sensorId in sensors_ids:
+            self.set_mode(sensorId, 66)
+            print("mode: ", self.what_mode(sensorId))
+
+        print("***************************************")
 
 
     def read_time_data(self):
@@ -378,12 +390,14 @@ class TrignoEMG(_BaseTrignoDaq):
             Data read from the device. Each channel is a row and each column
             is a point in time.
         """
-        starting_time = datetime.datetime.now()
+        #starting_time = datetime.datetime.now()
+        end_time = time.perf_counter()
         data = super(TrignoEMG, self).read_all()
         data = data[self.channels_mask,:]
         number_of_samples = data.shape[1]
         time_period = round(1 / self.rate, 4)
-        timestamps = pd.date_range(starting_time, periods=number_of_samples, freq=f'{time_period}S')
+        #timestamps = pd.date_range(starting_time, periods=number_of_samples, freq=f'{time_period}S')
+        timestamps = numpy.flip(end_time - numpy.arange(number_of_samples) * time_period)
         return data, timestamps
 
 class TrignoOrientation(_BaseTrignoDaq):
@@ -420,7 +434,9 @@ class TrignoOrientation(_BaseTrignoDaq):
         self.channels_mask = self._channels_mask(sensors_ids=sensors_ids, number_of_channels=self.data_channels, channels_per_sensor = channels_per_sensor)
 
         self.rate = 148.148 #when upsampling and backward compability are on
-        #self.rate = 74.074
+        # self.rate = float(self.what_rate(1, 2))
+        # print("*******************************")
+        # print("IMU RATE: ", self.rate)
 
 
     def read_time_data(self):
@@ -434,12 +450,14 @@ class TrignoOrientation(_BaseTrignoDaq):
             Data read from the device. Each channel is a row and each column
             is a point in time.
         """
-        starting_time = pd.datetime.now()
+        #starting_time = pd.Timestamp.now()
+        end_time = time.perf_counter()
         data = super(TrignoOrientation,self).read_all()
         data = data[self.channels_mask,:]
         number_of_samples = data.shape[1]
         time_period = round(1 / self.rate, 4)
-        timestamps = pd.date_range(starting_time, periods=number_of_samples, freq=f'{time_period}S')
+        #timestamps = pd.date_range(starting_time, periods=number_of_samples, freq=f'{time_period}S')
+        timestamps = numpy.flip(end_time - numpy.arange(number_of_samples) * time_period)
         return data, timestamps
 
 
@@ -503,7 +521,7 @@ class TrignoAdapter():
         """
         if(len(sensors_labels) != len(sensors_ids)):
             sensors_labels = sensors_ids
-            print(f'Incorrent number of sensor labels. Changing labels to: {sensors_labels}')
+            print(f'Incorrect number of sensor labels. Changing labels to: {sensors_labels}')
         trigno_sensors = self.__create_sensors(sensors_mode=sensors_mode,sensors_ids=sensors_ids, host=host)
         if(trigno_sensors):
             sensor_mode = self.TRIGNO_CLASS_TO_MODE[type(trigno_sensors)]
@@ -572,17 +590,3 @@ class TrignoAdapter():
         if(buffered):
             self.data_buff = pd.concat([self.data_buff, sensors_reading], sort=False)
         return sensors_reading
-
-
-
-
-
-
-
-
-
-
-
-
-
-
